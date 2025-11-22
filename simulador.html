@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Estocástico</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: linear-gradient(135deg, #1a0033 0%, #0f1419 100%); color: #e0e0e0; }
+        header { background: linear-gradient(135deg, #764ba2 0%, #f093fb 100%); padding: 30px; text-align: center; color: white; }
+        header h1 { font-size: 2em; margin-bottom: 10px; }
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .back-btn { display: inline-block; margin-bottom: 20px; padding: 10px 20px; background: #764ba2; color: white; text-decoration: none; border-radius: 6px; }
+        .back-btn:hover { background: #6a3fa0; }
+        .grid { display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 30px; }
+        .panel { background: #1a1f2e; border: 2px solid #764ba2; border-radius: 12px; padding: 25px; }
+        .panel h2 { color: #f093fb; margin-bottom: 20px; font-size: 1.3em; }
+        .param-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #f093fb; }
+        input[type="number"], input[type="range"] { width: 100%; padding: 10px; background: #253348; border: 1px solid #764ba2; color: #e0e0e0; border-radius: 6px; }
+        .slider-value { display: inline; margin-left: 10px; color: #f093fb; font-weight: bold; }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        button { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .btn-simulate { background: #f093fb; color: #000; }
+        .btn-simulate:hover { background: #e080e8; transform: scale(1.05); }
+        .btn-reset { background: #764ba2; color: white; }
+        .btn-reset:hover { background: #6a3fa0; }
+        .chart-container { position: relative; height: 400px; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+        .stat { background: #253348; padding: 15px; border-radius: 8px; text-align: center; border-left: 3px solid #f093fb; }
+        .stat-value { font-size: 1.8em; font-weight: bold; color: #f093fb; }
+        .stat-label { font-size: 0.85em; color: #999; margin-top: 5px; }
+        .formula { background: #253348; padding: 15px; border-radius: 8px; margin: 15px 0; font-family: monospace; border-left: 3px solid #f093fb; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎲 Simulador de Modelos Estocásticos</h1>
+        <p>Movimiento Browniano y Trayectorias Aleatorias Aplicadas a Procesos Electorales</p>
+    </header>
+    
+    <div class="container">
+        <a href="index.html" class="back-btn">← Volver al Inicio</a>
+        
+        <div class="grid">
+            <div class="panel">
+                <h2>⚡ Parámetros de Control</h2>
+                
+                <div class="param-group">
+                    <label>Drift (μ) - Tendencia:</label>
+                    <input type="number" id="drift" value="0.05" step="0.01" min="-0.2" max="0.2">
+                </div>
+                
+                <div class="param-group">
+                    <label>Volatilidad (σ):</label>
+                    <input type="range" id="volatility" value="0.15" min="0.01" max="0.5" step="0.01" onchange="document.getElementById('volValue').textContent = this.value">
+                    <span class="slider-value" id="volValue">0.15</span>
+                </div>
+                
+                <div class="param-group">
+                    <label>Valor Inicial (S0):</label>
+                    <input type="number" id="s0" value="1000000" step="10000">
+                </div>
+                
+                <div class="param-group">
+                    <label>Número de Periodos:</label>
+                    <input type="number" id="periods" value="252" min="10" max="1000" step="10">
+                </div>
+                
+                <div class="param-group">
+                    <label>Trayectorias Simuladas:</label>
+                    <input type="number" id="trajectories" value="100" min="10" max="500" step="10">
+                </div>
+                
+                <div class="formula">
+                    dS = μ·S·dt + σ·S·dW
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn-simulate" onclick="simular()">Ejecutar Simulación</button>
+                    <button class="btn-reset" onclick="resetear()">Resetear</button>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>Trayectorias Simuladas</h2>
+                <div class="chart-container">
+                    <canvas id="chartTrayectorias"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <div class="panel">
+                <h2>Distribución Final</h2>
+                <div class="chart-container">
+                    <canvas id="chartDistribucion"></canvas>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>📐 Estadísticas de Simulación</h2>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="mediaFinal">-</div>
+                        <div class="stat-label">Media Final</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="desvFinal">-</div>
+                        <div class="stat-label">Desv. Estándar</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="maxFinal">-</div>
+                        <div class="stat-label">Máximo Observado</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let chartTrayectorias, chartDistribucion;
+        
+        function simular() {
+            const drift = parseFloat(document.getElementById('drift').value);
+            const volatility = parseFloat(document.getElementById('volatility').value);
+            const s0 = parseFloat(document.getElementById('s0').value);
+            const periods = parseInt(document.getElementById('periods').value);
+            const trajectories = parseInt(document.getElementById('trajectories').value);
+            
+            const dt = 1 / 252;
+            let allTrajectories = [];
+            let finalValues = [];
+            
+            for (let t = 0; t < trajectories; t++) {
+                let path = [s0];
+                let st = s0;
+                
+                for (let i = 1; i <= periods; i++) {
+                    const dW = Math.sqrt(dt) * (Math.random() + Math.random() - 1) / Math.sqrt(3);
+                    st = st * Math.exp((drift - 0.5 * volatility * volatility) * dt + volatility * dW);
+                    path.push(st);
+                }
+                
+                allTrajectories.push(path);
+                finalValues.push(st);
+            }
+            
+            // Gráfico de trayectorias
+            if (chartTrayectorias) chartTrayectorias.destroy();
+            const ctx1 = document.getElementById('chartTrayectorias').getContext('2d');
+            
+            const colors = [];
+            for (let i = 0; i < trajectories; i++) {
+                colors.push(`hsl(${i * 360 / trajectories}, 70%, 50%)`);
+            }
+            
+            const datasets = allTrajectories.map((path, idx) => ({
+                label: `Trayectoria ${idx + 1}`,
+                data: path,
+                borderColor: colors[idx],
+                borderWidth: 1,
+                pointRadius: 0,
+                tension: 0,
+                showLine: true
+            }));
+            
+            chartTrayectorias = new Chart(ctx1, {
+                type: 'line',
+                data: { labels: Array.from({length: periods + 1}, (_, i) => i), datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { ticks: { color: '#999' }, grid: { color: '#333' } },
+                        x: { ticks: { color: '#999' }, grid: { color: '#333' } }
+                    }
+                }
+            });
+            
+            // Distribución final
+            if (chartDistribucion) chartDistribucion.destroy();
+            const ctx2 = document.getElementById('chartDistribucion').getContext('2d');
+            
+            const bins = 50;
+            const min = Math.min(...finalValues);
+            const max = Math.max(...finalValues);
+            const histData = new Array(bins).fill(0);
+            
+            finalValues.forEach(v => {
+                const idx = Math.floor(((v - min) / (max - min)) * (bins - 1));
+                histData[idx]++;
+            });
+            
+            chartDistribucion = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: bins}, (_, i) => (min + (max - min) * i / bins).toFixed(0)),
+                    datasets: [{
+                        label: 'Frecuencia',
+                        data: histData,
+                        backgroundColor: '#f093fb',
+                        borderColor: '#764ba2',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#e0e0e0' } } },
+                    scales: {
+                        y: { ticks: { color: '#999' }, grid: { color: '#333' } },
+                        x: { ticks: { color: '#999', maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } }
+                    }
+                }
+            });
+            
+            // Estadísticas
+            const media = finalValues.reduce((a, b) => a + b, 0) / finalValues.length;
+            const varianza = finalValues.reduce((a, b) => a + Math.pow(b - media, 2), 0) / finalValues.length;
+            const desv = Math.sqrt(varianza);
+            const maximo = Math.max(...finalValues);
+            
+            document.getElementById('mediaFinal').textContent = media.toLocaleString('es-CL', {maximumFractionDigits: 0});
+            document.getElementById('desvFinal').textContent = desv.toLocaleString('es-CL', {maximumFractionDigits: 0});
+            document.getElementById('maxFinal').textContent = maximo.toLocaleString('es-CL', {maximumFractionDigits: 0});
+        }
+        
+        function resetear() {
+            if (chartTrayectorias) chartTrayectorias.destroy();
+            if (chartDistribucion) chartDistribucion.destroy();
+            document.getElementById('mediaFinal').textContent = '-';
+            document.getElementById('desvFinal').textContent = '-';
+            document.getElementById('maxFinal').textContent = '-';
+        }
+        
+        // Simular al cargar
+        window.onload = () => simular();
+    </script>
+</body>
+</html>
