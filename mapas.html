@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapas Electorales Interactivos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d1b4e 100%); 
+            color: #e0e0e0; 
+            min-height: 100vh; 
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            text-align: center; margin-bottom: 40px;
+            background: rgba(100, 50, 140, 0.3);
+            padding: 30px; border-radius: 15px;
+            border-left: 5px solid #7c3aed;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; color: #a78bfa; }
+        .header p { font-size: 1.1em; color: #c4b5fd; }
+        .btn-back { 
+            background: #7c3aed; 
+            color: white; 
+            padding: 10px 20px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 1em; 
+            margin-bottom: 20px; 
+        }
+        .btn-back:hover { background: #6d28d9; }
+        .controls {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+            gap: 15px; margin-bottom: 30px;
+        }
+        .form-group {
+            background: rgba(124, 58, 237, 0.2); 
+            padding: 15px; 
+            border-radius: 10px;
+        }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #a78bfa; }
+        .form-group input, .form-group select { 
+            width: 100%; 
+            padding: 10px; 
+            border: none; 
+            border-radius: 5px; 
+            background: #2d1b4e; 
+            color: #e0e0e0; 
+        }
+        .btn-calcular { 
+            background: linear-gradient(135deg, #7c3aed, #ec4899); 
+            color: white; 
+            padding: 15px 30px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 1.1em; 
+            font-weight: 600;
+        }
+        .btn-calcular:hover { opacity: 0.9; }
+        .content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card {
+            background: rgba(50, 30, 80, 0.5); 
+            padding: 20px; 
+            border-radius: 10px; 
+            border: 1px solid #7c3aed;
+        }
+        .card h2 { margin-bottom: 15px; color: #a78bfa; }
+        table {
+            width: 100%; border-collapse: collapse; 
+            background: rgba(0, 0, 0, 0.3);
+        }
+        th, td {
+            padding: 12px; text-align: left; 
+            border-bottom: 1px solid #7c3aed;
+        }
+        th { background: rgba(124, 58, 237, 0.5); font-weight: 600; color: #a78bfa; }
+        tr:hover { background: rgba(124, 58, 237, 0.2); }
+        canvas { max-width: 100%; }
+        @media (max-width: 768px) { .content { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="btn-back" onclick="window.location.href='index.html';">← Volver al Inicio</button>
+        <div class="header">
+            <h1>🗺️ Mapas Electorales Interactivos</h1>
+            <p>Visualización y simulación de escenarios electorales por zonas geográficas</p>
+        </div>
+        
+        <div class="controls">
+            <div class="form-group">
+                <label>Número de Zonas:</label>
+                <input type="number" id="numZonas" value="4" min="2" max="10">
+            </div>
+            <div class="form-group">
+                <label>Ventaja Candidato A (%):</label>
+                <input type="number" id="ventajaA" value="5" min="-50" max="50">
+            </div>
+            <div class="form-group">
+                <label>Volatilidad (%): </label>
+                <input type="number" id="volatilidad" value="10" min="1" max="50">
+            </div>
+            <div class="form-group">
+                <button class="btn-calcular" onclick="generarMapas();">Generar Mapas</button>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="card">
+                <h2>Distribución por Zonas</h2>
+                <canvas id="mapaChart"></canvas>
+            </div>
+            <div class="card">
+                <h2>Análisis Geográfico</h2>
+                <canvas id="analisisChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="card" style="margin-top: 20px;">
+            <h2>Resultados por Zona</h2>
+            <table id="tablaZonas"></table>
+        </div>
+    </div>
+    
+    <script>
+        let mapaChart = null;
+        let analisisChart = null;
+        
+        function generarMapas() {
+            const numZonas = parseInt(document.getElementById('numZonas').value);
+            const ventajaA = parseFloat(document.getElementById('ventajaA').value);
+            const volatilidad = parseFloat(document.getElementById('volatilidad').value);
+            
+            const zonas = generarZonas(numZonas, ventajaA, volatilidad);
+            
+            mostrarGraficoMapas(zonas);
+            mostrarGraficoAnalisis(zonas);
+            mostrarTablaZonas(zonas);
+        }
+        
+        function generarZonas(numZonas, ventajaA, volatilidad) {
+            const zonas = [];
+            const nombres = ['Centro', 'Norte', 'Sur', 'Este', 'Oeste', 'Noreste', 'Noroeste', 'Sureste', 'Suroeste', 'Periferia'];
+            
+            for (let i = 0; i < numZonas; i++) {
+                const votosA = 50 + ventajaA + (Math.random() - 0.5) * volatilidad;
+                const votosB = 100 - votosA;
+                const poblacion = 10000 + Math.random() * 30000;
+                
+                zonas.push({
+                    nombre: nombres[i % nombres.length],
+                    votosA: Math.max(1, votosA),
+                    votosB: Math.max(1, votosB),
+                    poblacion: Math.round(poblacion),
+                    ganador: votosA > votosB ? 'A' : 'B'
+                });
+            }
+            return zonas;
+        }
+        
+        function mostrarGraficoMapas(zonas) {
+            const ctx = document.getElementById('mapaChart').getContext('2d');
+            const labels = zonas.map(z => z.nombre);
+            const dataA = zonas.map(z => z.votosA);
+            const dataB = zonas.map(z => z.votosB);
+            
+            if (mapaChart) mapaChart.destroy();
+            
+            mapaChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Candidato A (%)', data: dataA, backgroundColor: '#7c3aed', borderColor: '#a78bfa', borderWidth: 2 },
+                        { label: 'Candidato B (%)', data: dataB, backgroundColor: '#ec4899', borderColor: '#f472b6', borderWidth: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#e0e0e0', font: { size: 12 } } } },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { color: '#a78bfa' },
+                            grid: { color: 'rgba(122, 58, 237, 0.2)' }
+                        },
+                        x: { ticks: { color: '#a78bfa' }, grid: { color: 'rgba(122, 58, 237, 0.2)' } }
+                    }
+                }
+            });
+        }
+        
+        function mostrarGraficoAnalisis(zonas) {
+            const ctx = document.getElementById('analisisChart').getContext('2d');
+            const zonasGanadasA = zonas.filter(z => z.ganador === 'A').length;
+            const zonasGanadasB = zonas.filter(z => z.ganador === 'B').length;
+            
+            if (analisisChart) analisisChart.destroy();
+            
+            analisisChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [`Zonas Ganadas A (${zonasGanadasA})`, `Zonas Ganadas B (${zonasGanadasB})`],
+                    datasets: [{ 
+                        data: [zonasGanadasA, zonasGanadasB],
+                        backgroundColor: ['#7c3aed', '#ec4899'],
+                        borderColor: ['#a78bfa', '#f472b6'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#e0e0e0', font: { size: 12 } } } }
+                }
+            });
+        }
+        
+        function mostrarTablaZonas(zonas) {
+            const tabla = document.getElementById('tablaZonas');
+            let html = '<tr><th>Zona</th><th>Poblaci&oacute;n</th><th>Candidato A (%)</th><th>Candidato B (%)</th><th>Ganador</th></tr>';
+            
+            zonas.forEach(z => {
+                const ganador = z.ganador === 'A' ? '🟣 A' : '🔴 B';
+                html += `<tr><td>${z.nombre}</td><td>${z.poblacion.toLocaleString()}</td><td>${z.votosA.toFixed(1)}%</td><td>${z.votosB.toFixed(1)}%</td><td>${ganador}</td></tr>`;
+            });
+            
+            tabla.innerHTML = html;
+        }
+        
+        window.onload = generarMapas;
+    </script>
+</body>
+</html>
