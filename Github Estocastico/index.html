@@ -1,0 +1,404 @@
+<!-- Chosen Palette: Dark Slate Blue (bg-slate-900) and Soft Grays (text-slate-200) for analysis; Bright Cyan for interactivity and the futuristic footer. -->
+<!-- Application Structure Plan: La estructura elegida es un Dashboard Analítico vertical con tres secciones clave. 1. Panel de Control (Inputs): Permite al usuario modificar directamente los valores de Deriva y Volatilidad. 2. Conceptualización (Texto Interactivo): Muestra definiciones y la interpretación clave de cada factor. 3. Visualización Dinámica (Chart.js): Es el núcleo interactivo, que grafica trayectorias estocásticas simuladas en tiempo real. Este diseño prioriza el feedback inmediato: el usuario modifica un parámetro y ve su efecto inmediato en el gráfico, lo cual es óptimo para comprender la diferencia entre tendencia (Deriva) y riesgo (Volatilidad). La navegación es implícita a través del scroll. -->
+<!-- Visualization & Content Choices: Resumen de Contenido del Reporte -> Conceptos clave ($\mu$ y $\sigma$) para Factores A y B. Goal -> Facilitar la comprensión del efecto de $\mu$ y $\sigma$ en una trayectoria a lo largo del tiempo. Viz/Presentation Method -> Gráfico de Líneas Dinámico (Chart.js) mostrando múltiples trayectorias estocásticas simuladas (Random Walk con Drift y Volatility). Interaction -> Sliders para ajustar $\mu$ y $\sigma$ con el gráfico actualizándose al instante. Justification -> El concepto de volatilidad es visual por naturaleza; el gráfico de líneas es el mejor método para mostrar la dispersión y la tendencia temporal. Library/Method - Chart.js (Canvas) y Vanilla JS para simulación estocástica simple. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Parámetros de Modelos Estocásticos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0F172A; } /* bg-slate-900 */
+        
+        /* Estilos Base para las tarjetas, removiendo la sombra genérica */
+        .card-bg { background-color: #1E293B; /* bg-slate-800 */ border-radius: 0.75rem; }
+
+        /* Estilos del Chart Container */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 450px; /* Base height for medium screens */
+            max-height: 500px;
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 500px; }
+        }
+        @media (max-width: 767px) {
+            .chart-container { height: 350px; }
+        }
+
+        /* --- Estilos Futuristas para Tarjetas (Cajones) --- */
+
+        /* Core 3D Shadow Effect */
+        .card-futuristic {
+            position: relative;
+            z-index: 10;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            cursor: default;
+        }
+        
+        .card-futuristic::before {
+            content: '';
+            position: absolute;
+            top: 6px; 
+            left: 6px;
+            right: -6px; 
+            bottom: -6px;
+            background: transparent;
+            z-index: -1;
+            /* Sombras escalonadas para el efecto 3D */
+            box-shadow: 
+                -4px 4px 0 0 rgba(6, 182, 212, 0.3),  /* Cyan layer 1 */
+                -8px 8px 0 0 rgba(14, 165, 233, 0.2),  /* Blue layer 2 */
+                -12px 12px 0 0 rgba(6, 182, 212, 0.1);   /* Cyan layer 3 */
+            border-radius: 0.75rem;
+            transition: box-shadow 0.3s ease-in-out;
+        }
+
+        /* Flotación Continua (Reutilizada del footer) */
+        @keyframes float-anim {
+            from { transform: translateY(0px); }
+            to { transform: translateY(-3px); } /* Movimiento reducido para tarjetas */
+        }
+        .card-float {
+            animation: float-anim 4s infinite alternate;
+        }
+        
+        /* Efecto Hover para realzar la profundidad */
+        .card-futuristic:hover {
+            transform: translate(0, -2px);
+            box-shadow: 0 5px 15px rgba(6, 182, 212, 0.2);
+        }
+
+        /* --- Estilos Futuristas del Footer (Mantenidos) --- */
+
+        /* 1. Gradiente Cyan Animado */
+        .neon-text-gradient {
+            background-image: linear-gradient(90deg, #06B6D4, #0EA5E9, #06B6D4); /* From cyan-500 to sky-500 */
+            background-size: 200% auto;
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: gradient-flow 5s linear infinite;
+        }
+        @keyframes gradient-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 2. Resplandor Neón Pulsante (text-shadow) */
+        .neon-glow {
+            text-shadow: 
+                0 0 5px #06B6D4,  /* Light cyan */
+                0 0 10px #0EA5E9, /* Mid blue */
+                0 0 15px #06B6D4; /* Soft cyan */
+            animation: pulse-glow 3s infinite alternate, float-anim 4s infinite alternate;
+        }
+        @keyframes pulse-glow {
+            from { opacity: 0.8; text-shadow: 0 0 4px #06B6D4; }
+            to { opacity: 1; text-shadow: 0 0 8px #0EA5E9, 0 0 12px #06B6D4; }
+        }
+
+        /* 3. Efecto 3D con Sombras Escalonadas para Footer */
+        .footer-3d-container {
+            position: relative;
+            width: 100%;
+            padding: 1.5rem 0;
+        }
+
+        .footer-3d-effect {
+            position: relative;
+            z-index: 10;
+            display: inline-block;
+        }
+
+        .footer-3d-effect::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: -2px;
+            bottom: -2px;
+            background: transparent;
+            z-index: -1;
+            /* Sombras escalonadas para el efecto 3D */
+            box-shadow: 
+                -2px 2px 0 0 rgba(0, 182, 212, 0.4),  /* Cyan layer 1 */
+                -4px 4px 0 0 rgba(14, 165, 233, 0.3),  /* Blue layer 2 */
+                -6px 6px 0 0 rgba(0, 182, 212, 0.2);   /* Cyan layer 3 */
+            border-radius: 0.5rem;
+        }
+
+        /* 5. Responsividad de Texto */
+        .responsive-text-size {
+            font-size: 1.5rem; /* Mobile */
+            font-weight: 800;
+        }
+        @media (min-width: 640px) {
+            .responsive-text-size {
+                font-size: 2.5rem; /* Desktop */
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-200">
+
+    <!-- Header y Título Principal -->
+    <header class="py-8 bg-slate-900 shadow-xl border-b border-cyan-500/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl font-extrabold text-white sm:text-5xl">Análisis Interactivo de Parámetros Estocásticos</h1>
+            <p class="mt-2 text-xl text-slate-400">Comprende la Deriva ($\mu$) y la Volatilidad ($\sigma$) mediante la simulación en tiempo real.</p>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-12">
+
+        <!-- SECCIÓN 1: PANEL DE CONTROL Y CONCEPTUALIZACIÓN (APLICACIÓN DE EFECTOS) -->
+        <section id="control-conceptual" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Panel de Control (Inputs) -->
+            <div class="lg:col-span-1 card-futuristic card-float h-full card-bg">
+                <div class="p-6 h-full flex flex-col justify-start">
+                    <h2 class="text-2xl font-bold mb-4 border-b border-cyan-500 pb-2 text-cyan-400">Control de Factores</h2>
+                    <p class="text-sm text-slate-400 mb-6">Ajusta los parámetros de los factores Kast y Jara para ver su impacto en la simulación. El gráfico se actualizará automáticamente con el Factor Kast.</p>
+
+                    <!-- Input Deriva Kast (muA) -->
+                    <label for="input-muA" class="block text-sm font-medium mb-1 mt-4">Deriva Kast ($\mu$A): <span id="value-muA" class="font-bold text-cyan-400">0.10</span></label>
+                    <input type="range" id="input-muA" min="-0.5" max="0.5" step="0.01" value="0.1" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="updateParam('muA', this.value)">
+
+                    <!-- Input Volatilidad Kast (sigmaA) -->
+                    <label for="input-sigmaA" class="block text-sm font-medium mb-1 mt-4">Volatilidad Kast ($\sigma$A): <span id="value-sigmaA" class="font-bold text-cyan-400">0.20</span></label>
+                    <input type="range" id="input-sigmaA" min="0.01" max="0.5" step="0.01" value="0.2" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="updateParam('sigmaA', this.value)">
+
+                    <!-- Input Deriva Jara (muB) -->
+                    <label for="input-muB" class="block text-sm font-medium mb-1 mt-4">Deriva Jara ($\mu$B): <span id="value-muB" class="font-bold text-cyan-400">0.10</span></label>
+                    <input type="range" id="input-muB" min="-0.5" max="0.5" step="0.01" value="0.1" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="updateParam('muB', this.value)" disabled>
+
+                    <!-- Input Volatilidad Jara (sigmaB) -->
+                    <label for="input-sigmaB" class="block text-sm font-medium mb-1 mt-4">Volatilidad Jara ($\sigma$B): <span id="value-sigmaB" class="font-bold text-cyan-400">0.10</span></label>
+                    <input type="range" id="input-sigmaB" min="0.01" max="0.5" step="0.01" value="0.1" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer" oninput="updateParam('sigmaB', this.value)" disabled>
+                </div>
+            </div>
+
+            <!-- Conceptualización de Parámetros -->
+            <div class="lg:col-span-2 card-futuristic card-float card-bg">
+                <div class="p-6">
+                    <h2 class="text-2xl font-bold mb-4 border-b border-cyan-500 pb-2 text-cyan-400">Definiciones Clave del Modelo</h2>
+                    <p class="text-slate-300 mb-6">Esta sección explica el rol de los dos parámetros fundamentales que definen la evolución de un proceso estocástico, como se aplica a los Factores Kast y Jara.</p>
+
+                    <div class="space-y-4">
+                        <!-- Concepto de Deriva -->
+                        <div class="p-4 bg-slate-700 rounded-lg border-l-4 border-cyan-500">
+                            <h3 class="text-xl font-semibold text-white flex items-center mb-2">
+                                <span class="mr-2 text-cyan-400">&#x25B2;</span> Deriva (Drift, $\mu$)
+                            </h3>
+                            <p class="text-slate-300">Representa la **tasa de cambio promedio y dirección** del factor. Es el componente determinista que define la tendencia subyacente del modelo.</p>
+                            <ul class="mt-2 text-sm text-slate-400 list-disc pl-5">
+                                <li>$\mu > 0$: El factor tiende a subir (tendencia positiva).</li>
+                                <li>$\mu < 0$: El factor tiende a bajar (tendencia negativa).</li>
+                                <li>**Efecto en la simulación:** Un cambio en la Deriva mueve el centro de gravedad de todas las trayectorias hacia arriba o hacia abajo.</li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Concepto de Volatilidad -->
+                        <div class="p-4 bg-slate-700 rounded-lg border-l-4 border-cyan-500">
+                            <h3 class="text-xl font-semibold text-white flex items-center mb-2">
+                                <span class="mr-2 text-cyan-400">&#x2749;</span> Volatilidad (Volatility, $\sigma$)
+                            </h3>
+                            <p class="text-slate-300">Representa la **magnitud de las fluctuaciones aleatorias o incertidumbre**. Es el componente estocástico que define el "ruido" o la dispersión del proceso.</p>
+                            <ul class="mt-2 text-sm text-slate-400 list-disc pl-5">
+                                <li>$\sigma$ alta: El factor es errático y las variaciones son grandes.</li>
+                                <li>$\sigma$ baja: El factor es más predecible y suave.</li>
+                                <li>**Efecto en la simulación:** Un cambio en la Volatilidad aumenta o reduce la separación entre las trayectorias simuladas.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SECCIÓN 2: VISUALIZACIÓN DINÁMICA (APLICACIÓN DE EFECTOS) -->
+        <section id="visualizacion" class="card-futuristic card-float card-bg">
+            <div class="p-6">
+                <h2 class="text-2xl font-bold mb-4 border-b border-cyan-500 pb-2 text-cyan-400">Visualización de Trayectorias (Factor Kast)</h2>
+                <p class="text-slate-300 mb-6">Observa cómo la Deriva ($\mu$A) y la Volatilidad ($\sigma$A) de Kast influyen en 10 posibles caminos futuros (trayectorias). Intenta:
+                    <span class="font-semibold text-cyan-400">1. Aumentar $\mu$A:</span> Verás cómo todas las líneas se inclinan hacia arriba.
+                    <span class="font-semibold text-cyan-400">2. Aumentar $\sigma$A:</span> Verás cómo las líneas se dispersan más.
+                </p>
+                
+                <div class="chart-container">
+                    <canvas id="stochasticChart"></canvas>
+                </div>
+                
+                <div class="mt-4 text-center">
+                    <button onclick="simulateAndDraw()" class="px-6 py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-500 transition duration-300 shadow-lg shadow-cyan-500/50">
+                        &#x21BB; Recalcular Trayectorias
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER FUTURISTA NEÓN -->
+    <footer class="mt-12 border-t border-cyan-500/30 bg-slate-900 footer-3d-container">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-slate-200 footer-float">
+            <div class="footer-3d-effect">
+                <h3 class="responsive-text-size font-extrabold tracking-tight">
+                    <span class="neon-text-gradient neon-glow">DATAFLOWIA</span>
+                </h3>
+            </div>
+            
+            <p class="text-sm sm:text-base mt-2 flex justify-center flex-wrap gap-x-4 gap-y-1">
+                <span class="text-cyan-400">www.dataflowia.com</span>
+                <span class="text-slate-400">|</span>
+                <span class="text-cyan-400">contacto@dataflowia.com</span>
+            </p>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1 pb-4">
+                &copy; 2025 Todos los derechos reservados.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Data principal y estado
+        let modelParams = {
+            muA: 0.1,    // Deriva Kast
+            sigmaA: 0.2, // Volatilidad Kast
+            muB: 0.1,    // Deriva Jara (no usada en el gráfico, pero mantenida)
+            sigmaB: 0.1, // Volatilidad Jara (no usada en el gráfico, pero mantenida)
+        };
+        
+        let stochasticChart;
+        const NUM_PATHS = 10;
+        const NUM_STEPS = 100;
+        const INITIAL_VALUE = 100;
+        const TIME_STEP = 1 / 12; // Unidades de tiempo, e.g., meses
+
+        // 1. Generación de Trayectoria Estocástica (Random Walk con Deriva)
+        function generatePath(initialValue, mu, sigma, steps, dt) {
+            let path = [initialValue];
+            let currentValue = initialValue;
+            for (let i = 1; i <= steps; i++) {
+                // Generar un número aleatorio de la distribución normal (Box-Muller, simplificado para simulación)
+                // Usamos Math.random() para una aproximación simple. Para simulación real se usaría la distribución normal (Box-Muller)
+                // Aquí usamos una aproximación simple de un random walk para demostrar el concepto de $\mu$ y $\sigma$
+                const z = (Math.random() - 0.5) * 2; // Rango de -1 a 1 (aproximación)
+                
+                // Fórmula de cambio (simplificada de un proceso Wiener / Movimiento Browniano)
+                // dX = mu*dt + sigma*dW (donde dW es el choque estocástico)
+                const driftTerm = mu * dt;
+                const volatilityTerm = sigma * Math.sqrt(dt) * z * 5; // Multiplicador para hacerlo visualmente claro
+                
+                currentValue = currentValue + driftTerm + volatilityTerm;
+                
+                // Asegurar que el valor no sea demasiado negativo o extremo
+                currentValue = Math.max(10, currentValue);
+                path.push(currentValue);
+            }
+            return path;
+        }
+
+        // 2. Inicialización del Gráfico
+        function initializeChart() {
+            const ctx = document.getElementById('stochasticChart').getContext('2d');
+            stochasticChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: NUM_STEPS + 1}, (_, i) => i),
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Trayectorias Simuladas del Factor Kast',
+                            color: '#E2E8F0',
+                            font: { size: 18 }
+                        },
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Paso ${context.label}: ${context.parsed.y.toFixed(2)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Pasos de Tiempo',
+                                color: '#94A3B8'
+                            },
+                            ticks: { color: '#94A3B8' },
+                            grid: { color: '#334155' } // slate-700
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Valor del Factor (Ejemplo)',
+                                color: '#94A3B8'
+                            },
+                            ticks: { color: '#94A3B8' },
+                            grid: { color: '#334155' }
+                        }
+                    }
+                }
+            });
+            simulateAndDraw(); // Primera simulación
+        }
+
+        // 3. Simular y Dibujar
+        function simulateAndDraw() {
+            stochasticChart.data.datasets = [];
+            const mu = modelParams.muA;
+            const sigma = modelParams.sigmaA;
+
+            for (let i = 0; i < NUM_PATHS; i++) {
+                const pathData = generatePath(INITIAL_VALUE, mu, sigma, NUM_STEPS, TIME_STEP);
+                const color = `rgba(6, 182, 212, ${0.4 + i * 0.05})`; // Color Cyan con opacidad variable
+                
+                stochasticChart.data.datasets.push({
+                    label: `Trayectoria ${i + 1}`,
+                    data: pathData,
+                    borderColor: color,
+                    borderWidth: 1.5,
+                    fill: false,
+                    pointRadius: 0 // Ocultar puntos para un look más limpio
+                });
+            }
+            stochasticChart.update();
+        }
+
+        // 4. Actualizar Parámetros desde la Interfaz
+        function updateParam(paramKey, value) {
+            const floatValue = parseFloat(value);
+            modelParams[paramKey] = floatValue;
+            document.getElementById(`value-${paramKey}`).textContent = floatValue.toFixed(2);
+            
+            // Si el parámetro afectado es el de Kast, se debe redibujar
+            if (paramKey === 'muA' || paramKey === 'sigmaA') {
+                simulateAndDraw();
+            }
+        }
+
+        // 5. Inicializar la aplicación
+        window.onload = initializeChart;
+    </script>
+</body>
+</html>

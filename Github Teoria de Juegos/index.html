@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modelo Teoría de Juegos Electoral | DATAFLOW IA</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <div class="logo-block">
+        <div class="logo-mark">DF</div>
+        <div class="logo-text">
+          <h1>DATAFLOW IA</h1>
+          <p>Modelo de Teoría de Juegos Electoral · 14-12-25</p>
+        </div>
+      </div>
+      <div class="mode-toggle">
+        <span class="mode-label">Modo demostrativo</span>
+        <label class="switch">
+          <input type="checkbox" id="modeToggle" />
+          <span class="slider"></span>
+        </label>
+        <span class="mode-label">Modo serio / paper</span>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <!-- Panel de configuración -->
+      <section class="card config-card">
+        <h2>Configuración del modelo</h2>
+        <p class="card-subtitle">
+          Ajusta estrategias, bases de apoyo y parámetros del modelo. En modo “serio” se sugiere usar valores calibrados con datos reales.
+        </p>
+
+        <div class="config-grid">
+          <!-- Estrategias -->
+          <div class="config-group">
+            <h3>Estrategias de campaña</h3>
+            <div class="player-config">
+              <div>
+                <h4>Candidato A: Kast</h4>
+                <label for="strategyA">Estrategia</label>
+                <select id="strategyA">
+                  <option value="BD">BD · Base Dura</option>
+                  <option value="MC">MC · Moderación y Centro</option>
+                </select>
+              </div>
+              <div>
+                <h4>Candidato B: Jara</h4>
+                <label for="strategyB">Estrategia</label>
+                <select id="strategyB">
+                  <option value="BD">BD · Base Dura</option>
+                  <option value="MC">MC · Moderación y Centro</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bases de apoyo -->
+          <div class="config-group">
+            <h3>Bases de apoyo (%)</h3>
+            <div class="player-config">
+              <div>
+                <label for="baseA">Base Kast (A)</label>
+                <input type="number" id="baseA" min="0" max="100" step="0.5" value="45" />
+              </div>
+              <div>
+                <label for="baseB">Base Jara (B)</label>
+                <input type="number" id="baseB" min="0" max="100" step="0.5" value="43" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Parámetros -->
+          <div class="config-group">
+            <h3>Parámetros estocásticos</h3>
+            <div class="param-grid">
+              <div>
+                <label for="sigma">Sigma (ruido)</label>
+                <input type="number" id="sigma" min="0.001" max="0.05" step="0.001" value="0.015" />
+                <small>Variabilidad observada en encuestas / RRSS</small>
+              </div>
+              <div>
+                <label for="iterations">Iteraciones Monte Carlo</label>
+                <input type="number" id="iterations" min="500" max="20000" step="500" value="5000" />
+                <small>Más iteraciones = mayor precisión (pero más lento)</small>
+              </div>
+              <div>
+                <label for="timeSteps">Pasos de tiempo</label>
+                <input type="number" id="timeSteps" min="8" max="52" step="1" value="24" />
+                <small>Semanas o cortes de tiempo hasta la elección</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="buttons-row">
+          <button id="runScenario" class="btn primary">Simular escenario actual</button>
+          <button id="runMatrix" class="btn outline">Calcular matriz de juego 2×2</button>
+        </div>
+      </section>
+
+      <!-- Resultados -->
+      <section class="results-grid">
+        <!-- Escenario actual -->
+        <article class="card">
+          <h2>Escenario actual simulado</h2>
+          <p class="card-subtitle">
+            Probabilidades estimadas de victoria para la combinación de estrategias seleccionada.
+          </p>
+
+          <div class="scenario-summary">
+            <div class="scenario-item">
+              <span class="tag tag-a">Kast (A)</span>
+              <p class="scenario-value" id="probA">–</p>
+            </div>
+            <div class="scenario-item">
+              <span class="tag tag-b">Jara (B)</span>
+              <p class="scenario-value" id="probB">–</p>
+            </div>
+          </div>
+
+          <p class="hint" id="modeHint">
+            Modo demostrativo: los parámetros son orientativos. Ajusta bases y sigma para explorar escenarios.
+          </p>
+        </article>
+
+        <!-- Matriz de pagos -->
+        <article class="card">
+          <h2>Matriz de juego 2×2</h2>
+          <p class="card-subtitle">
+            Cada celda muestra la probabilidad de victoria (A / B) para la combinación de estrategias.
+          </p>
+
+          <div class="matrix-wrapper">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>B: BD</th>
+                  <th>B: MC</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>A: BD</th>
+                  <td id="cell-bd-bd">–</td>
+                  <td id="cell-bd-mc">–</td>
+                </tr>
+                <tr>
+                  <th>A: MC</th>
+                  <td id="cell-mc-bd">–</td>
+                  <td id="cell-mc-mc">–</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <!-- Gráfico -->
+        <article class="card chart-card">
+          <h2>Trayectoria simulada de intención de voto</h2>
+          <p class="card-subtitle">
+            Una trayectoria ejemplo para el escenario actual. Las curvas no son deterministas, cambian en cada simulación.
+          </p>
+          <canvas id="resultChart"></canvas>
+        </article>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>
+        © 2025 DATAFLOW IA · www.dataflowia.com · contacto@dataflowia.com · Todos los derechos reservados | by RCH
+      </p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

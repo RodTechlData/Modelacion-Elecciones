@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MANUAL DE USO - Modelo de Teoría de Juegos Electoral</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carga de la fuente Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* 1. Body Dark y Fuente Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #08080c; /* Fondo muy oscuro, casi negro */
+            color: #e0e7ff; /* Texto principal claro */
+            padding: 2rem;
+            min-height: 100vh; /* Asegura que el footer esté al final si el contenido es corto */
+        }
+
+        /* 2. Estilo del Título Hero (Ajustado, sin luminosidad neón) */
+        .hero-title {
+            color: #66d9ff; /* Cian suave para destaque */
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-align: center;
+            /* Sombra eliminada para quitar el efecto neón */
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+            margin-bottom: 2rem;
+            padding: 1rem 0;
+            /* Mantenemos la inclinación por el toque futurista */
+            transform: skew(-2deg);
+        }
+
+        /* 3. Estilo de los Cajones 3D del Acordeón */
+        .accordion-item {
+            background-color: #1a1a2e; /* Fondo del cajón un poco más claro que el body */
+            border: 2px solid #3d3d6b; /* Borde sutil oscuro/azulado */
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            /* Sombra sutil para el efecto 3D inicial */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            overflow: hidden; /* Para contener la animación */
+        }
+
+        /* Efecto Luminous Shadow en Hover */
+        .accordion-item:hover {
+            border-color: #0ff; /* Borde se vuelve cian */
+            /* Elevación y Sombra Luminosa */
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 
+                0 0 15px rgba(0, 255, 255, 0.7), /* Glow cian fuerte */
+                0 10px 20px rgba(0, 0, 0, 0.7); /* Sombra oscura para profundidad */
+        }
+
+        .accordion-header {
+            cursor: pointer;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.125rem;
+            color: #fff;
+        }
+
+        .accordion-content {
+            padding: 0 1.5rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease-out, padding 0.4s ease-out;
+            border-top: 1px solid transparent; /* Inicialmente transparente */
+        }
+        
+        /* Contenido Abierto */
+        .accordion-item.active .accordion-content {
+            padding: 1rem 1.5rem 1.5rem;
+            border-top-color: #3d3d6b;
+        }
+
+        .accordion-content p, .accordion-content ul, .accordion-content table {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        /* Estilo para listas dentro del contenido */
+        .accordion-content ul {
+            list-style: none;
+            padding-left: 1.5rem;
+        }
+
+        .accordion-content ul li {
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+        
+        .accordion-content ul li:before {
+            content: '»'; /* Viñeta futurista */
+            position: absolute;
+            left: -1.5rem;
+            color: #0ff;
+            font-weight: 900;
+        }
+
+        .accordion-content strong {
+            color: #66d9ff; /* Cian más suave para destacar */
+        }
+
+        /* Estilo para tablas */
+        .manual-table {
+            width: 100%;
+            margin: 1rem 0;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #3d3d6b;
+        }
+        .manual-table th, .manual-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border: none;
+        }
+        .manual-table th {
+            background-color: #2c2c4d;
+            color: #0ff;
+            font-weight: 700;
+        }
+        .manual-table tr:nth-child(even) {
+            background-color: #16162a;
+        }
+
+        /* Estilo del Footer */
+        .footer-glow-separator {
+            border-top: 2px solid rgba(0, 255, 255, 0.4);
+            box-shadow: 0 -2px 10px rgba(0, 255, 255, 0.3); /* Sombra que simula el glow */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-4xl mx-auto">
+        
+        <!-- LOGO DATAFLOW IA (Cian Intenso, Esquina Superior Izquierda) -->
+        <!-- Usamos #0ff que es un Cian Intenso y el mismo skew para cohesión de diseño -->
+        <div class="text-3xl font-black tracking-widest uppercase text-[#0ff] mb-10 transform skew-x-[-5deg] inline-block">
+            DATAFLOW IA
+        </div>
+
+        <!-- Título Hero -->
+        <h1 class="hero-title">
+            📘 MANUAL DE USO –<br>
+            Modelo Interactivo de Teoría de Juegos Electoral
+        </h1>
+        <!-- Se eliminó "DATAFLOW IA" de aquí para evitar redundancia con el logo -->
+        <p class="text-center text-sm text-gray-400 mb-8">Versión 1.0 · 2025</p>
+
+        <!-- Contenedor del Acordeón -->
+        <div id="accordion-container">
+            <!-- ⭐ 1. Introducción -->
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>⭐ 1. Introducción</span>
+                    <svg class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content">
+                    <p>El <strong>Modelo de Teoría de Juegos Electoral 14-12-25</strong> es una herramienta interactiva desarrollada por DATAFLOW IA para:</p>
+                    <ul>
+                        <li>Simular escenarios electorales entre dos candidatos (Kast y Jara).</li>
+                        <li>Estudiar la interacción estratégica de ambos actores mediante teoría de juegos.</li>
+                        <li>Aplicar un modelo estocástico tipo Browniano para proyectar % de intención de voto.</li>
+                        <li>Visualizar resultados, trayectorias, matriz de pagos y probabilidad de victoria.</li>
+                        <li>Alternar entre Modo Demostrativo y Modo Serio/Paper.</li>
+                    </ul>
+                    <p>Este modelo tiene fines analíticos, académicos y de investigación.</p>
+                </div>
+            </div>
+
+            <!-- ⭐ 2. Requisitos Técnicos -->
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>⭐ 2. Requisitos Técnicos</span>
+                    <svg class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content">
+                    <p>El sistema funciona en cualquier navegador moderno, tanto en:</p>
+                    <ul>
+                        <li>PC Windows / Mac</li>
+                        <li>Android</li>
+                        <li>iOS</li>
+                        <li>Tablets</li>
+                    </ul>
+                    <p>No requiere servidor ni base de datos.</p>
+                    <p>Basta con subir los archivos <code>index.html</code>, <code>style.css</code> y <code>script.js</code> a cualquier hosting.</p>
+                </div>
+            </div>
+
+            <!-- ⭐ 3. Estructura de la Interfaz -->
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>⭐ 3. Estructura de la Interfaz</span>
+                    <svg class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content">
+                    <p>La aplicación está dividida en tres zonas:</p>
+                    
+                    <p><strong>1. Encabezado</strong></p>
+                    <ul>
+                        <li>Logo DATAFLOW IA (ahora en la parte superior izquierda del documento)</li>
+                        <li>Nombre del modelo</li>
+                        <li>Switch para cambiar Modo Demostrativo ↔ Modo Serio/Paper</li>
+                    </ul>
+                    
+                    <p><strong>2. Panel de Configuración</strong></p>
+                    <p>Incluye:</p>
+                    <ul>
+                        <li>Selección de estrategias para cada candidato:
+                            <ul>
+                                <li>BD → Base Dura</li>
+                                <li>MC → Moderación y Centro</li>
+                            </ul>
+                        </li>
+                        <li>Ajuste de bases de apoyo (%)</li>
+                        <li>Parámetros del modelo:
+                            <ul>
+                                <li>Sigma (ruido estocástico)</li>
+                                <li>Iteraciones Monte Carlo</li>
+                                <li>Pasos de tiempo</li>
+                            </ul>
+                        </li>
+                        <li>Botones:
+                            <ul>
+                                <li>Simular escenario actual</li>
+                                <li>Calcular matriz de juego 2×2</li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <p><strong>3. Zona de Resultados</strong></p>
+                    <ul>
+                        <li>Probabilidad de victoria para la combinación actual</li>
+                        <li>Matriz de pagos</li>
+                        <li>Gráfico con la trayectoria de intención de voto</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ⭐ 4. Modo de Uso Paso a Paso -->
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>⭐ 4. Modo de Uso Paso a Paso</span>
+                    <svg class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content">
+                    
+                    <p><strong>✅ Paso 1: Seleccione el modo de funcionamiento</strong></p>
+                    <p>En la parte superior:</p>
+                    <ul>
+                        <li><strong>Modo Demostrativo:</strong> Permite experimentar libremente. Se utiliza para clases, demostraciones o exploración interactiva. Los parámetros pueden modificarse libremente.</li>
+                        <li><strong>Modo Serio / Paper:</strong> Calibrado para análisis académico. Ideal para informes o simulaciones basadas en datos reales. Presenta advertencias y textos explicativos adicionales.</li>
+                    </ul>
+                    
+                    <p><strong>✅ Paso 2: Elija la estrategia de cada candidato</strong></p>
+                    <p>En la sección “Estrategias de campaña”:</p>
+                    <ul>
+                        <li>Seleccione para Kast (A): BD (Base Dura) o MC (Moderación y Centro).</li>
+                        <li>Seleccione para Jara (B): BD (Base Dura) o MC (Moderación y Centro).</li>
+                    </ul>
+                    <p>Estas combinaciones afectan directamente el drift del Browniano, la velocidad de crecimiento de apoyo y el rechazo del centro político.</p>
+
+                    <p><strong>✅ Paso 3: Ajuste bases de apoyo inicial</strong></p>
+                    <p>Las bases iniciales representan apoyo duro (% entre 0 y 100):</p>
+                    <ul>
+                        <li>Base Kast (A)</li>
+                        <li>Base Jara (B)</li>
+                    </ul>
+                    <p>Recomendación en modo serio: Usar bases provenientes de encuestas recientes o post elección anterior.</p>
+
+                    <p><strong>✅ Paso 4: Configure parámetros del modelo</strong></p>
+                    <ul>
+                        <li><strong>Sigma (“ruido”):</strong> Controla cuánta volatilidad tienen las curvas.
+                            <ul>
+                                <li>0.005 → modelo muy estable</li>
+                                <li>0.015 → recomendado</li>
+                                <li>0.03 → escenario muy volátil (RRSS conflictivas, eventos sorpresivos)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Iteraciones Monte Carlo:</strong> Cantidad de simulaciones:
+                            <ul>
+                                <li>1.000 → rápido</li>
+                                <li>5.000 → recomendado</li>
+                                <li>10.000+ → alta precisión</li>
+                            </ul>
+                        </li>
+                        <li><strong>Pasos de tiempo:</strong> Cantidad de “etapas” hasta la elección:
+                            <ul>
+                                <li>12 → mensual</li>
+                                <li>24 → quincenal</li>
+                                <li>30–40 → semanal</li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <p><strong>✅ Paso 5: Presione “Simular escenario actual”</strong></p>
+                    <p>Obtendrá:</p>
+                    <ul>
+                        <li><strong>✔ Probabilidad de victoria:</strong> Ejemplo: Kast: 58.3% / Jara: 41.7%</li>
+                        <li><strong>✔ Un gráfico dinámico:</strong> Que muestra una trayectoria ejemplo del comportamiento de A y B a lo largo del tiempo.</li>
+                        <li><strong>✔ Resultados instantáneos:</strong> Cada cambio en parámetros actualiza todo en tiempo real.</li>
+                    </ul>
+                    
+                    <p><strong>✅ Paso 6: Calcule la Matriz de Juego 2×2</strong></p>
+                    <p>Presione 🔳 "Calcular matriz de juego 2×2".</p>
+                    <p>El sistema simula las 4 combinaciones estratégicas:</p>
+                    <table class="manual-table">
+                        <thead>
+                            <tr>
+                                <th>A / B</th>
+                                <th>BD (Base Dura)</th>
+                                <th>MC (Moderación y Centro)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>BD (Base Dura)</strong></td>
+                                <td>Resultado (Ej: A: 54% / B: 46%)</td>
+                                <td>Resultado (Ej: A: 54% / B: 46%)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>MC (Moderación y Centro)</strong></td>
+                                <td>Resultado (Ej: A: 54% / B: 46%)</td>
+                                <td>Resultado (Ej: A: 54% / B: 46%)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>Cada celda muestra la Probabilidad de victoria de A y B.</p>
+
+                </div>
+            </div>
+
+            <!-- ⭐ 5. Interpretación de Resultados -->
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>⭐ 5. Interpretación de Resultados</span>
+                    <svg class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content">
+                    <p><strong>✔ 1. Escenario Actual</strong></p>
+                    <p>Entrega la evaluación inmediata del escenario según bases, estrategias y parámetros configurados.</p>
+                    
+                    <p><strong>✔ 2. Trayectorias</strong></p>
+                    <p>Permiten observar el posible camino del voto en el tiempo. No son predicciones deterministas, sino simulaciones bajo ruido estocástico.</p>
+                    
+                    <p><strong>✔ 3. Matriz de Pagos</strong></p>
+                    <p>Permite analizar:</p>
+                    <ul>
+                        <li>Equilibrios estratégicos (Nash, etc.)</li>
+                        <li>Incentivos de cada candidato</li>
+                        <li>Si conviene polarizar o moderar</li>
+                        <li>Impacto del centro político</li>
+                    </ul>
+
+                    <p><strong>✔ 4. Comparación Demo vs Serio</strong></p>
+                    <ul>
+                        <li><strong>Demo:</strong> explorar posibilidades, enseñar teoría de juegos.</li>
+                        <li><strong>Serio:</strong> realizar papers, informes, estimaciones profesionales.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ⭐ 6. Recomendaciones de Uso Profesional -->
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>⭐ 6. Recomendaciones de Uso Profesional</span>
+                    <svg class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content">
+                    <ul>
+                        <li>Usar <strong>Modo Serio</strong> al generar contenido para presentaciones o informes.</li>
+                        <li>Ajustar bases de apoyo con encuestas confiables (últimas 3 semanas).</li>
+                        <li>Revisar sensibilidad a cambios en sigma y en pasos.</li>
+                        <li>Comparar estrategias cruzadas BD vs MC para identificar el equilibrio.</li>
+                        <li>Presentar trayectorias con cautela: representan escenarios hipotéticos.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ⭐ 7. Errores Comunes y Soluciones -->
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>⭐ 7. Errores Comunes y Soluciones</span>
+                    <svg class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content">
+                    <ul>
+                        <li><strong>❗ "Los valores salen muy extremos"</strong> → Reducir sigma o aumentar iteraciones.</li>
+                        <li><strong>❗ "El gráfico se ve raro"</strong> → Refrescar simulación o recargar la página (Chart.js re-renderiza limpio).</li>
+                        <li><strong>❗ "Kast siempre gana" o "Jara siempre gana"</strong> → Verificar que las bases de apoyo no estén demasiado desequilibradas.</li>
+                        <li><strong>❗ "La matriz muestra números raros"</strong> → Asegurarse de haber presionado *Calcular Matriz* después de modificar parámetros.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ⭐ 8. Mantenimiento -->
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>⭐ 8. Mantenimiento</span>
+                    <svg class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content">
+                    <p>No requiere base de datos.</p>
+                    <p>Para actualizar el modelo:</p>
+                    <ul>
+                        <li>Editar <code>script.js</code> para ajustar parámetros.</li>
+                        <li>Cambiar drift o sensibilidad según nuevos estudios.</li>
+                        <li>Subir nuevamente al hosting.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ⭐ 9. Contacto y soporte -->
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>⭐ 9. Contacto y soporte</span>
+                    <svg class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content">
+                    <p><strong>DATAFLOW IA</strong></p>
+                    <p>www.dataflowia.com</p>
+                    <p>contacto@dataflowia.com</p>
+                    <p>Soporte técnico disponible para:</p>
+                    <ul>
+                        <li>Ajustes del modelo</li>
+                        <li>Calibración a datos reales</li>
+                        <li>Presentaciones ejecutivas</li>
+                        <li>Versiones ampliadas con 3 o más candidatos</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- ⭐ 10. Conclusión -->
+            <div class="accordion-item">
+                <div class="accordion-header" onclick="toggleAccordion(this)">
+                    <span>⭐ 10. Conclusión</span>
+                    <svg class="w-6 h-6 transform transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <div class="accordion-content">
+                    <p>Este modelo permite explorar la interacción estratégica electoral de forma moderna, visual y científicamente sustentada.</p>
+                    <p>Usa teoría de juegos + procesos estocásticos para entregar una herramienta didáctica, profesional y precisa, adaptable tanto a investigación académica como a análisis político real.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer Section -->
+    <footer class="max-w-4xl mx-auto mt-16 pt-6 footer-glow-separator text-center text-sm">
+        <div class="flex flex-col sm:flex-row justify-center space-y-1 sm:space-y-0 sm:space-x-8 mb-2">
+            <!-- Los enlaces están en cian claro y cambian a blanco al pasar el cursor para el efecto futurista -->
+            <a href="https://www.dataflowia.com" target="_blank" class="text-cyan-400 font-semibold transition duration-300 hover:text-white">www.dataflowia.com</a>
+            <a href="mailto:contacto@dataflowia.com" class="text-cyan-400 font-semibold transition duration-300 hover:text-white">contacto@dataflowia.com</a>
+        </div>
+        <p class="text-gray-500 pb-4">
+            &copy; 2025 todos los derechos reservados.
+        </p>
+    </footer>
+
+    <!-- JavaScript para el Acordeón -->
+    <script>
+        function toggleAccordion(header) {
+            const item = header.parentNode;
+            const content = header.nextElementSibling;
+            
+            // Cierra todos los demás cajones
+            document.querySelectorAll('.accordion-item').forEach(otherItem => {
+                if (otherItem !== item) {
+                    otherItem.classList.remove('active');
+                    const otherContent = otherItem.querySelector('.accordion-content');
+                    if (otherContent) {
+                        otherContent.style.maxHeight = null;
+                        otherItem.querySelector('svg').classList.remove('rotate-180');
+                    }
+                }
+            });
+
+            // Abre o cierra el cajón seleccionado
+            item.classList.toggle('active');
+            const icon = header.querySelector('svg');
+
+            if (item.classList.contains('active')) {
+                // Abre
+                content.style.maxHeight = content.scrollHeight + "px";
+                icon.classList.add('rotate-180');
+            } else {
+                // Cierra
+                content.style.maxHeight = null;
+                icon.classList.remove('rotate-180');
+            }
+        }
+    </script>
+
+</body>
+</html>
