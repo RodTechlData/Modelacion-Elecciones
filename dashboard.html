@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analítico Electoral</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #0f1419; color: #e0e0e0; }
+        header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; color: white; }
+        .container { max-width: 1400px; margin: 20px auto; padding: 0 20px; }
+        .back-btn { display: inline-block; margin-bottom: 20px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 6px; cursor: pointer; }
+        .back-btn:hover { background: #5568d3; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: #1a1f2e; border: 1px solid #333; border-radius: 10px; padding: 20px; }
+        .card h3 { color: #667eea; margin-bottom: 15px; }
+        .stat-box { background: #253348; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 10px; }
+        .stat-value { font-size: 2em; font-weight: bold; color: #667eea; }
+        .stat-label { font-size: 0.9em; color: #999; margin-top: 5px; }
+        .chart-container { position: relative; height: 300px; margin-bottom: 20px; }
+        input, select { background: #253348; border: 1px solid #444; color: #e0e0e0; padding: 10px; border-radius: 6px; margin-bottom: 10px; width: 100%; }
+        button { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; width: 100%; }
+        button:hover { background: #5568d3; }
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { background: #253348; padding: 12px; text-align: left; color: #667eea; }
+        td { padding: 12px; border-bottom: 1px solid #333; }
+        tr:hover { background: #1a1f2e; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📊 Dashboard Analítico Electoral</h1>
+        <p>Análisis en Tiempo Real de Escenarios y Parámetros Electorales</p>
+    </header>
+    
+    <div class="container">
+        <a href="index.html" class="back-btn">← Volver al Inicio</a>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>📊 Estadísticas Globales</h3>
+                <div class="stat-box">
+                    <div class="stat-value" id="totalVotos">0</div>
+                    <div class="stat-label">Votos Totales Proyectados</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="prom">0%</div>
+                    <div class="stat-label">Participación Promedio</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>⚡ Parámetros de Entrada</h3>
+                <label>Media de Votos (miles):</label>
+                <input type="number" id="media" value="1000" min="100" step="100">
+                <label>Desviación Estándar:</label>
+                <input type="number" id="std" value="200" min="10" step="10">
+                <label>Candidatos:</label>
+                <input type="number" id="candidatos" value="3" min="2" max="10">
+                <button onclick="generarDatos()">Generar Datos</button>
+            </div>
+            
+            <div class="card">
+                <h3>📄 Resumen de Escenarios</h3>
+                <div class="stat-box">
+                    <div class="stat-value" id="escenario">Neutral</div>
+                    <div class="stat-label">Escenario Actual</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="volatilidad">Baja</div>
+                    <div class="stat-label">Volatilidad Observada</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>Distribución de Votos por Candidato</h3>
+                <div class="chart-container">
+                    <canvas id="chartCandidatos"></canvas>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Variación de Participación</h3>
+                <div class="chart-container">
+                    <canvas id="chartParticipacion"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>📊 Tabla Comparativa de Candidatos</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Candidato</th>
+                            <th>Votos Proyectados</th>
+                            <th>Porcentaje</th>
+                            <th>Desv. Estándar</th>
+                            <th>Intervalo Conf. (95%)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaResultados"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let chartCandidatos, chartParticipacion;
+        
+        function generarDatos() {
+            const media = parseFloat(document.getElementById('media').value) * 1000;
+            const std = parseFloat(document.getElementById('std').value) * 1000;
+            const numCandidatos = parseInt(document.getElementById('candidatos').value);
+            
+            // Generar datos normales
+            let candidatos = [];
+            let votos = [];
+            for (let i = 0; i < numCandidatos; i++) {
+                candidatos.push('Candidato ' + (i + 1));
+                let voto = media / numCandidatos + (Math.random() - 0.5) * std;
+                votos.push(Math.max(0, voto));
+            }
+            
+            // Actualizar estadísticas
+            let totalVotos = votos.reduce((a, b) => a + b, 0);
+            document.getElementById('totalVotos').innerText = totalVotos.toLocaleString('es-CL', {maximumFractionDigits: 0});
+            document.getElementById('prom').innerText = (Math.random() * 40 + 55).toFixed(1) + '%';
+            
+            // Gráfico de candidatos
+            if (chartCandidatos) chartCandidatos.destroy();
+            const ctx1 = document.getElementById('chartCandidatos').getContext('2d');
+            chartCandidatos = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: candidatos,
+                    datasets: [{
+                        label: 'Votos Proyectados',
+                        data: votos,
+                        backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe'],
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#e0e0e0' } } }, scales: { y: { ticks: { color: '#999' }, grid: { color: '#333' } }, x: { ticks: { color: '#999' } } } }
+            });
+            
+            // Gráfico de participación
+            if (chartParticipacion) chartParticipacion.destroy();
+            const ctx2 = document.getElementById('chartParticipacion').getContext('2d');
+            let participacionData = Array.from({length: 20}, () => Math.random() * 30 + 50);
+            chartParticipacion = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 20}, (_, i) => 'Periodo ' + (i + 1)),
+                    datasets: [{
+                        label: 'Participación (%)',
+                        data: participacionData,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#e0e0e0' } } }, scales: { y: { ticks: { color: '#999' }, grid: { color: '#333' } }, x: { ticks: { color: '#999' } } } }
+            });
+            
+            // Tabla
+            let html = '';
+            votos.forEach((v, i) => {
+                let porcentaje = (v / totalVotos * 100).toFixed(1);
+                let ic = (v * 0.95).toFixed(0);
+                html += `<tr>
+                    <td>${candidatos[i]}</td>
+                    <td>${v.toLocaleString('es-CL', {maximumFractionDigits: 0})}</td>
+                    <td>${porcentaje}%</td>
+                    <td>${(std * 0.3).toFixed(0)}</td>
+                    <td>[${ic} - ${(v * 1.05).toFixed(0)}]</td>
+                </tr>`;
+            });
+            document.getElementById('tablaResultados').innerHTML = html;
+        }
+        
+        // Cargar datos iniciales
+        generarDatos();
+    </script>
+</body>
+</html>
